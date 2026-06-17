@@ -2,7 +2,7 @@ import streamlit as st
 import plotly.express as px
 from utils import load_data
 
-st.header("📍 Insight Detail Per Provinsi")
+st.header("Insight Detail Per Provinsi")
 
 df = load_data()
 
@@ -19,14 +19,12 @@ st.markdown("---")
 c1, c2 = st.columns(2)
 
 with c1:
-    # Status Penerima (Bar Stacked)
     df_status_prov = df_prov.groupby('jenjang')[['jumlah_satpen_negeri', 'jumlah_satpen_swasta']].sum().reset_index()
     fig_status_prov = px.bar(df_status_prov, x='jenjang', y=['jumlah_satpen_negeri', 'jumlah_satpen_swasta'], 
                              barmode='stack', title="Status Satpen di Provinsi Tersebut")
     st.plotly_chart(fig_status_prov, use_container_width=True)
 
 with c2:
-    # Distribusi per Jenjang
     df_jenjang_prov = df_prov.groupby('jenjang')['jumlah_penerima_manfaat'].sum().reset_index()
     fig_jenjang_prov = px.bar(df_jenjang_prov, x='jenjang', y='jumlah_penerima_manfaat', 
                               title="Distribusi Penerima per Jenjang")
@@ -34,7 +32,7 @@ with c2:
 
 st.markdown("---")
 
-# Identifikasi Kecamatan Terpadat (Top 10)
+# Top 10 Kecamatan
 st.subheader("Top 10 Kecamatan Terpadat")
 df_kecamatan = df_prov.groupby('kecamatan')['jumlah_penerima_manfaat'].sum().reset_index()
 df_kecamatan_top10 = df_kecamatan.sort_values(by='jumlah_penerima_manfaat', ascending=False).head(10)
@@ -46,7 +44,7 @@ st.plotly_chart(fig_kecamatan, use_container_width=True)
 
 st.markdown("---")
 
-# Manajemen Risiko Provinsi (Bar Stacked)
+# Risiko per kabupaten_kota
 st.subheader("Manajemen Risiko di Tingkat Provinsi")
 risiko_cols = ['jumlah_alergi', 'jumlah_fobia', 'jumlah_intoleransi', 'jumlah_kondisi_khusus']
 df_risiko_kec = df_prov.groupby('kabupaten_kota')[risiko_cols].sum().reset_index()
