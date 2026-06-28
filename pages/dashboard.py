@@ -18,7 +18,7 @@ df_all["total_peserta_didik"] = df_all["jumlah_laki"] + df_all["jumlah_perempuan
 jenjang_urut = [j for j in JENJANG_ORDER if j in df_all["jenjang"].unique()]
 
 st.title("Dashboard BI — Program Makan Bergizi Gratis 2026")
-st.caption("Data Nasional MBG | Proses A–C | Juni 2026")
+st.caption("Data Nasional MBG | Juni 2026")
 st.markdown("---")
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -27,14 +27,21 @@ st.markdown("---")
 with st.sidebar:
     st.header("Filter Data")
 
+    # Tahun
+    semua_tahun = sorted(df_all["tahun"].unique().tolist())
+    pilih_tahun = st.multiselect(
+        "Tahun", semua_tahun, placeholder="Semua tahun (default)"
+    )
+
     # Provinsi
-    semua_prov = sorted(df_all["provinsi"].unique().tolist())
+    df_tmp0 = df_all[df_all["tahun"].isin(pilih_tahun)] if pilih_tahun else df_all
+    semua_prov = sorted(df_tmp0["provinsi"].unique().tolist())
     pilih_prov = st.multiselect(
         "Provinsi", semua_prov, placeholder="Semua provinsi (default)"
     )
 
     # Kabupaten — ikut provinsi
-    df_tmp = df_all[df_all["provinsi"].isin(pilih_prov)] if pilih_prov else df_all
+    df_tmp = df_tmp0[df_tmp0["provinsi"].isin(pilih_prov)] if pilih_prov else df_tmp0
     semua_kab = sorted(df_tmp["kabupaten_kota"].unique().tolist())
     pilih_kab = st.multiselect(
         "Kabupaten/Kota", semua_kab, placeholder="Semua kabupaten/kota"
@@ -56,6 +63,8 @@ with st.sidebar:
 
 # ── Apply filter ───────────────────────────────────────────────────────────────
 df = df_all.copy()
+if pilih_tahun:
+    df = df[df["tahun"].isin(pilih_tahun)]
 if pilih_prov:
     df = df[df["provinsi"].isin(pilih_prov)]
 if pilih_kab:
@@ -71,11 +80,12 @@ if len(df) == 0:
     st.error("Tidak ada data untuk filter ini. Coba perluas pilihan.")
     st.stop()
 
+n_tahun = df["tahun"].nunique()
 n_prov = df["provinsi"].nunique()
 n_kab = df["kabupaten_kota"].nunique()
 n_kec = df["kecamatan"].nunique()
 st.info(
-    f"Filter aktif: **{n_prov} provinsi** | **{n_kab} kabupaten/kota** | **{n_kec} kecamatan**"
+    f"Filter aktif: **{n_tahun} tahun** | **{n_prov} provinsi** | **{n_kab} kabupaten/kota** | **{n_kec} kecamatan**"
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
