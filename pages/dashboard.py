@@ -107,7 +107,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(
 # TAB 1 — RINGKASAN EKSEKUTIF
 # ══════════════════════════════════════════════════════════════════════════════
 with tab1:
-    st.subheader("Ringkasan Eksekutif")
+    st.subheader("Insight umum")
 
     total_satpen = int(df["jumlah_satuan_pendidikan"].sum())
     total_laki = int(df["jumlah_laki"].sum())
@@ -128,6 +128,67 @@ with tab1:
     k5.metric("Peserta Didik Kondisi Khusus", f"{total_kk:,}")
     k6.metric("Sekolah Negeri", f"{total_negeri:,}")
     k7.metric("Sekolah Swasta", f"{total_swasta:,}")
+
+    st.markdown("---")
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PETA CHOROPLETH INDONESIA (dipindah ke tab Ringkasan / halaman pertama)
+    # ══════════════════════════════════════════════════════════════════════════
+    st.markdown("#### Peta Penerima Manfaat per Provinsi")
+
+    df_geo = df.groupby("provinsi_map", as_index=False).agg(
+        jumlah_penerima_manfaat=("jumlah_penerima_manfaat", "sum"),
+        jumlah_kondisi_khusus=("jumlah_kondisi_khusus", "sum"),
+        jumlah_satuan_pendidikan=("jumlah_satuan_pendidikan", "sum"),
+        total_peserta_didik=("total_peserta_didik", "sum"),
+    )
+
+    metrik_peta = st.radio(
+        "Tampilkan di peta:",
+        [
+            "jumlah_penerima_manfaat",
+            "jumlah_kondisi_khusus",
+            "jumlah_satuan_pendidikan",
+            "total_peserta_didik",
+        ],
+        format_func=lambda x: {
+            "jumlah_penerima_manfaat": "Penerima Manfaat",
+            "jumlah_kondisi_khusus": "Peserta Didik Kondisi Khusus",
+            "jumlah_satuan_pendidikan": "Satuan Pendidikan",
+            "total_peserta_didik": "Total Peserta Didik",
+        }[x],
+        horizontal=True,
+        key="metrik_peta_tab1",
+    )
+
+    label_map = {
+        "jumlah_penerima_manfaat": "Penerima Manfaat",
+        "jumlah_kondisi_khusus": "Kondisi Khusus",
+        "jumlah_satuan_pendidikan": "Satuan Pendidikan",
+        "total_peserta_didik": "Total Peserta Didik",
+    }
+
+    fig_peta = px.choropleth_map(
+        df_geo,
+        geojson=geo,
+        locations="provinsi_map",
+        featureidkey="properties.PROVINSI",
+        color=metrik_peta,
+        color_continuous_scale="YlOrRd",
+        title=f"Peta {label_map[metrik_peta]} per Provinsi",
+        labels={metrik_peta: label_map[metrik_peta], "provinsi_map": "Provinsi"},
+        hover_data={
+            "jumlah_penerima_manfaat": ":,",
+            "jumlah_kondisi_khusus": ":,",
+            "jumlah_satuan_pendidikan": ":,",
+        },
+        map_style="carto-positron",
+        center={"lat": -2.5, "lon": 118},
+        zoom=3.6,
+        opacity=0.8,
+    )
+    fig_peta.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0}, height=500)
+    st.plotly_chart(fig_peta, use_container_width=True)
 
     st.markdown("---")
 
@@ -227,62 +288,6 @@ with tab1:
 with tab2:
     st.subheader("Analisis Wilayah")
 
-    df_geo = df.groupby("provinsi_map", as_index=False).agg(
-        jumlah_penerima_manfaat=("jumlah_penerima_manfaat", "sum"),
-        jumlah_kondisi_khusus=("jumlah_kondisi_khusus", "sum"),
-        jumlah_satuan_pendidikan=("jumlah_satuan_pendidikan", "sum"),
-        total_peserta_didik=("total_peserta_didik", "sum"),
-    )
-
-    metrik_peta = st.radio(
-        "Tampilkan di peta:",
-        [
-            "jumlah_penerima_manfaat",
-            "jumlah_kondisi_khusus",
-            "jumlah_satuan_pendidikan",
-            "total_peserta_didik",
-        ],
-        format_func=lambda x: {
-            "jumlah_penerima_manfaat": "Penerima Manfaat",
-            "jumlah_kondisi_khusus": "Peserta Didik Kondisi Khusus",
-            "jumlah_satuan_pendidikan": "Satuan Pendidikan",
-            "total_peserta_didik": "Total Peserta Didik",
-        }[x],
-        horizontal=True,
-    )
-
-    label_map = {
-        "jumlah_penerima_manfaat": "Penerima Manfaat",
-        "jumlah_kondisi_khusus": "Kondisi Khusus",
-        "jumlah_satuan_pendidikan": "Satuan Pendidikan",
-        "total_peserta_didik": "Total Peserta Didik",
-    }
-
-   # ── FIXED PETA CHOROPLETH INDONESIA (pakai engine maplibre, bukan geo/d3) ────
-    fig_peta = px.choropleth_map(
-        df_geo,
-        geojson=geo,
-        locations="provinsi_map",
-        featureidkey="properties.PROVINSI",  # <── GeoJSON kamu pakai key "PROVINSI", bukan "PRV_NAME"
-        color=metrik_peta,
-        color_continuous_scale="YlOrRd",
-        title=f"Peta {label_map[metrik_peta]} per Provinsi",
-        labels={metrik_peta: label_map[metrik_peta], "provinsi_map": "Provinsi"},
-        hover_data={
-            "jumlah_penerima_manfaat": ":,", 
-            "jumlah_kondisi_khusus": ":,",
-            "jumlah_satuan_pendidikan": ":,",
-        },
-        map_style="carto-positron",
-        center={"lat": -2.5, "lon": 118},
-        zoom=3.6,
-        opacity=0.8,
-    )
-    
-    fig_peta.update_layout(margin={"r": 0, "t": 40, "l": 0, "b": 0}, height=500)
-    st.plotly_chart(fig_peta, use_container_width=True)
-    # ────────────────────────────────────────────────────────────────────────────
-    # ────────────────────────────────────────────────────────────────────────────
     # Ranking provinsi
     df_rank = df.groupby("provinsi", as_index=False).agg(
         penerima=("jumlah_penerima_manfaat", "sum"),
